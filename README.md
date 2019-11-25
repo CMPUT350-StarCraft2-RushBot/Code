@@ -21,4 +21,4 @@ n * Supply depot
 
 2 * Factory
 
-This bot will push 3 siege tanks and around 20 marins by the time of 5 min in game. And it will attack wave by wave.
+This bot will push 3 siege tanks and around 20 marines by the time of 5 min in game. And it will attack wave by wave.
