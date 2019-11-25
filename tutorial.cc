@@ -20,25 +20,34 @@ public:
 
     virtual void OnGameStart() final {
         staging_location_ = Observation()->GetStartLocation();
+        game_info_ = Observation()->GetGameInfo();
     }
     
     virtual void OnStep() final {
-        ManageWorkers(UNIT_TYPEID::TERRAN_SCV, ABILITY_ID::HARVEST_GATHER, UNIT_TYPEID::TERRAN_REFINERY);
-        TryBuildBarracks();
-        TryBuildSupplyDepot();
+        //ScoutWithMarines();
         TryBuildRefinery();
+        ManageWorkers(UNIT_TYPEID::TERRAN_SCV, ABILITY_ID::HARVEST_GATHER, UNIT_TYPEID::TERRAN_REFINERY);
+        TryBuildSupplyDepot();
+        /*
         if (Observation()->GetMinerals() > 150 && Observation()->GetVespene() > 100) {
-            TryBuildStructureRandom(ABILITY_ID::BUILD_FACTORY, UNIT_TYPEID::TERRAN_SCV);
-        }
-        if (CountUnitType(UNIT_TYPEID::TERRAN_MARINE) >= 20) {
-            TargetSCVCount = 5;
-        }
+            TryBuildStructureRandom(ABILITY_ID::BUILD_STARPORT, UNIT_TYPEID::TERRAN_SCV);
+        }*/
+        TryBuildFactory();
+        TryBuildBarracks();
+        TryBuildFactoryLab();
+        
     }
 
     virtual void OnUnitIdle(const Unit* unit) final {
+        const ObservationInterface* observation = Observation();
         switch (unit->unit_type.ToType()) {
             case UNIT_TYPEID::TERRAN_COMMANDCENTER: {
-                Actions()->UnitCommand(unit, ABILITY_ID::TRAIN_SCV);
+                if (CountUnitType(UNIT_TYPEID::TERRAN_SCV) < 20) {
+                    Actions()->UnitCommand(unit, ABILITY_ID::TRAIN_SCV);
+                }
+                if (observation->GetMinerals() > 150) {
+                    Actions()->UnitCommand(unit, ABILITY_ID::MORPH_ORBITALCOMMAND);
+                }
                 break;
             }
             case UNIT_TYPEID::TERRAN_SCV: {
@@ -49,48 +58,41 @@ public:
                 Actions()->UnitCommand(unit, ABILITY_ID::SMART, mineral_target);
                 break;
             }
+                 
             case UNIT_TYPEID::TERRAN_BARRACKS: {
                 Actions()->UnitCommand(unit, ABILITY_ID::TRAIN_MARINE);
-                /*
-                if (CountUnitType(UNIT_TYPEID::TERRAN_MARINE) % 40 <= 30) {
-                    Actions()->UnitCommand(unit, ABILITY_ID::TRAIN_MARINE);
-                }
-                else {
-                    Actions()->UnitCommand(unit, ABILITY_ID::TRAIN_REAPER);
-                }*/
                 break;
             }
             case UNIT_TYPEID::TERRAN_MARINE: {
-                const ObservationInterface* observation = Observation();
-                if (CountUnitType(UNIT_TYPEID::TERRAN_MARINE) >= 20) {
-                    Units enemy_units = observation->GetUnits(Unit::Alliance::Enemy);
-                    if (enemy_units.empty()) {
-                        break;
-                    }
-                    if (unit->orders.front().ability_id == ABILITY_ID::ATTACK) {
-                        float distance = 10000;
-                        for (const auto& u : enemy_units) {
-                            float d = Distance2D(u->pos, unit->pos);
-                            if (d < distance) {
-                                distance = d;
-                            }
-                        }
-                        if (distance < 6) {
-                            Actions()->UnitCommand(unit, ABILITY_ID::EFFECT_STIM);
-                            break;
-                        }
-                    }
+                if (CountUnitType(UNIT_TYPEID::TERRAN_SIEGETANK) >= 3) {
                     AttackWithUnitType(UNIT_TYPEID::TERRAN_MARINE, observation);
                 }
                 break;
-            }/*
-            case UNIT_TYPEID::TERRAN_REAPER: {
-                const ObservationInterface* observation = Observation();
-                if (CountUnitType(UNIT_TYPEID::TERRAN_REAPER) >= 10) {
-                    AttackWithUnitType(UNIT_TYPEID::TERRAN_REAPER, observation);
+            }
+            case UNIT_TYPEID::TERRAN_FACTORY: {
+                Actions()->UnitCommand(unit, ABILITY_ID::TRAIN_SIEGETANK);
+                /*
+                if (CountUnitType(UNIT_TYPEID::TERRAN_SIEGETANK) % 4 == 0) {
+                    Actions()->UnitCommand(unit, ABILITY_ID::TRAIN_THOR);
                 }
-                break;
-            }*/
+                else
+                {
+                    Actions()->UnitCommand(unit, ABILITY_ID::TRAIN_SIEGETANK);
+                }*/
+            }
+            case UNIT_TYPEID::TERRAN_SIEGETANK: {
+                if (CountUnitType(UNIT_TYPEID::TERRAN_SIEGETANK) >= 3) {
+                    AttackWithUnitType(UNIT_TYPEID::TERRAN_SIEGETANK, observation);
+                }
+            }
+            case UNIT_TYPEID::TERRAN_STARPORT: {
+                Actions()->UnitCommand(unit, ABILITY_ID::TRAIN_LIBERATOR);
+            }
+            case UNIT_TYPEID::TERRAN_LIBERATOR: {
+                if (CountUnitType(UNIT_TYPEID::TERRAN_LIBERATOR) >= 3) {
+                    AttackWithUnitType(UNIT_TYPEID::TERRAN_LIBERATOR, observation);
+                }
+            }
             default: {
                 break;
             }
@@ -99,6 +101,7 @@ public:
     
     std::vector<Point3D> expansions_;
     Point3D staging_location_;
+    GameInfo game_info_;
     
 
 private:
@@ -114,7 +117,7 @@ int main(int argc, char* argv[]) {
     Bot bot;
     coordinator.SetParticipants({
         CreateParticipant(Race::Terran, &bot),
-        CreateComputer(Race::Zerg, Difficulty::Hard)
+        CreateComputer(Race::Zerg, Difficulty::HardVeryHard)
     });
 
     coordinator.LaunchStarcraft();
