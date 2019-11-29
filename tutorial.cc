@@ -24,22 +24,17 @@ public:
     }
     
     virtual void OnStep() final {
-        //const ObservationInterface* observation = Observation();
         TryBuildRefinery();
         ManageWorkers(UNIT_TYPEID::TERRAN_SCV, ABILITY_ID::HARVEST_GATHER, UNIT_TYPEID::TERRAN_REFINERY);
         TryBuildSupplyDepot();
         TryBuildFactory();
         TryBuildBarracks();
-        TryBuildBarrackReactor();
+        //TryBuildBarrackReactor();
         TryBuildFactoryLab();
         ManageArmy();
     }
 
     virtual void OnUnitIdle(const Unit* unit) final {
-        
-        const ObservationInterface* observation = Observation();
-        Units enemy_units = observation->GetUnits(Unit::Alliance::Enemy);
-        Units army = observation->GetUnits(Unit::Alliance::Self, IsArmy(observation));
         
         switch (unit->unit_type.ToType()) {
             case UNIT_TYPEID::TERRAN_COMMANDCENTER: {
@@ -58,12 +53,7 @@ public:
             }
             
             case UNIT_TYPEID::TERRAN_BARRACKS: {
-                if (CountUnitType(UNIT_TYPEID::TERRAN_BARRACKSREACTOR) == 2) {
-                    Actions()->UnitCommand(unit, ABILITY_ID::TRAIN_MARINE);
-                    if (CountUnitType(UNIT_TYPEID::TERRAN_SIEGETANK) > 3) {
-                        Actions()->UnitCommand(unit, ABILITY_ID::TRAIN_MARINE);
-                    }
-                }
+                Actions()->UnitCommand(unit, ABILITY_ID::TRAIN_MARINE);
                 break;
             }
             case UNIT_TYPEID::TERRAN_FACTORY: {
