@@ -15,74 +15,27 @@ using namespace sc2;
 #include "helpers.h"
 // Helper functions
 
-class Bot : public sc2::Agent {
+class RushBot : public sc2::Agent {
+    
 public:
-
-    virtual void OnGameStart() final {
-        staging_location_ = Observation()->GetStartLocation();
-        game_info_ = Observation()->GetGameInfo();
-    }
     
-    virtual void OnStep() final {
-        TryBuildRefinery();
-        ManageWorkers(UNIT_TYPEID::TERRAN_SCV, ABILITY_ID::HARVEST_GATHER, UNIT_TYPEID::TERRAN_REFINERY);
-        TryBuildSupplyDepot();
-        TryBuildFactory();
-        TryBuildBarracks();
-        //TryBuildBarrackReactor();
-        TryBuildFactoryLab();
-        ManageArmy();
-    }
-
-    virtual void OnUnitIdle(const Unit* unit) final {
-        
-        switch (unit->unit_type.ToType()) {
-            case UNIT_TYPEID::TERRAN_COMMANDCENTER: {
-                if (CountUnitType(UNIT_TYPEID::TERRAN_SCV) < 20) {
-                    Actions()->UnitCommand(unit, ABILITY_ID::TRAIN_SCV);
-                }
-                break;
-            }
-            case UNIT_TYPEID::TERRAN_SCV: {
-                const Unit* mineral_target = FindNearestMineralPatch(unit->pos);
-                if (!mineral_target) {
-                    break;
-                }
-                Actions()->UnitCommand(unit, ABILITY_ID::SMART, mineral_target);
-                break;
-            }
-            
-            case UNIT_TYPEID::TERRAN_BARRACKS: {
-                Actions()->UnitCommand(unit, ABILITY_ID::TRAIN_MARINE);
-                break;
-            }
-            case UNIT_TYPEID::TERRAN_FACTORY: {
-                Actions()->UnitCommand(unit, ABILITY_ID::TRAIN_SIEGETANK);
-            }
-            default: {
-                break;
-            }
-        }
-    }
+#include "BotPublic.h"
+// Public functions
     
-    std::vector<Point3D> expansions_;
-    Point3D staging_location_;
-    GameInfo game_info_;
-
 private:
     
 #include "BotPrivate.h"
-
+// Private functions
 };
 
 int main(int argc, char* argv[]) {
     Coordinator coordinator;
     coordinator.LoadSettings(argc, argv);
 
-    Bot bot;
+    RushBot mybot;
     coordinator.SetParticipants({
-        CreateParticipant(Race::Terran, &bot),
-        CreateComputer(Race::Protoss, Difficulty::Hard)
+        CreateParticipant(Race::Terran, &mybot),
+        CreateComputer(Race::Protoss, Difficulty::HardVeryHard)
     });
 
     coordinator.LaunchStarcraft();

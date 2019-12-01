@@ -2,6 +2,7 @@ size_t CountUnitType(UNIT_TYPEID unit_type) {
     return Observation()->GetUnits(Unit::Alliance::Self, IsUnit(unit_type)).size();
 }
 
+
 bool TryBuildStructure(AbilityID ability_type_for_structure, UnitTypeID unit_type, Point2D location, bool isExpansion = false) {
 
     //std::cout << "TryBuildStructure started!\n";
@@ -10,25 +11,21 @@ bool TryBuildStructure(AbilityID ability_type_for_structure, UnitTypeID unit_typ
 
     //if we have no workers Don't build
     if (workers.empty()) {
-        //std::cout << "NO Worker available!\n";
         return false;
     }
 
     // Check to see if there is already a worker heading out to build it
     for (const auto& worker : workers) {
         for (const auto& order : worker->orders) {
-            if (order.ability_id == ability_type_for_structure) {
-                //std::cout << "Worker already bulding!\n";
-                return false;
+            if (order.ability_id == ability_type_for_structure) {                return false;
             }
         }
     }
-    //std::cout << "Worker available!\n";
+
     // If no worker is already building one, get a random worker to build one
     const Unit* unit = GetRandomEntry(workers);
     // Check to see if unit can make it there
     if (Query()->PathingDistance(unit, location) < 0.1f) {
-        //std::cout << "cannot build here!\n";
         return false;
     }
     if (!isExpansion) {
@@ -40,8 +37,6 @@ bool TryBuildStructure(AbilityID ability_type_for_structure, UnitTypeID unit_typ
     }
     // Check to see if unit can build there
     if (Query()->Placement(ability_type_for_structure, location)) {
-        //if (ability_type_for_structure == ABILITY_ID::BUILD_STARPORT)
-            //std::cout << "start building! ";
         Actions()->UnitCommand(unit, ability_type_for_structure, location);
         return true;
     }
@@ -49,11 +44,11 @@ bool TryBuildStructure(AbilityID ability_type_for_structure, UnitTypeID unit_typ
 
 }
 
+
 bool TryBuildSupplyDepot()  {
     const ObservationInterface* observation = Observation();
 
     // If we are not supply capped, don't build a supply depot.
-    
     if (observation->GetFoodUsed() < observation->GetFoodCap() - 6) {
         return false;
     }
@@ -80,7 +75,6 @@ bool TryBuildSupplyDepot()  {
 }
 
 
-
 bool TryBuildRefinery() {
     const ObservationInterface* observation = Observation();
     Units bases = observation->GetUnits(Unit::Alliance::Self, IsTownHall());
@@ -99,7 +93,6 @@ bool TryBuildRefinery() {
             }
         }
     }
-
     return false;
 }
 
@@ -120,22 +113,6 @@ const Unit* FindNearestMineralPatch(const Point2D& start) {
     return target;
 }
 
-
-const Unit* FindNearestGas(const Point2D& start) {
-    Units units = Observation()->GetUnits(Unit::Alliance::Neutral);
-    float distance = std::numeric_limits<float>::max();
-    const Unit* target = nullptr;
-    for (const auto& u : units) {
-        if (u->unit_type == UNIT_TYPEID::NEUTRAL_VESPENEGEYSER) {
-            float d = DistanceSquared2D(u->pos, start);
-            if (d < distance) {
-                distance = d;
-                target = u;
-            }
-        }
-    }
-    return target;
-}
 
 bool TryBuildGas(AbilityID build_ability, UnitTypeID worker_type, Point2D base_location) {
     const ObservationInterface* observation = Observation();
@@ -162,33 +139,25 @@ bool TryBuildGas(AbilityID build_ability, UnitTypeID worker_type, Point2D base_l
 
 }
 
-bool TryBuildBarracks(int flag = 0) {
+
+bool TryBuildBarracks() {
     const ObservationInterface* observation = Observation();
 
-    
     // Wait until we have our quota of TERRAN_SCV's.
     if (CountUnitType(UNIT_TYPEID::TERRAN_SCV) < TargetSCVCount / 2)
         return false;
 
     // One build 1 barracks.
-    if (CountUnitType(UNIT_TYPEID::TERRAN_BARRACKS) > 1)
+    if (CountUnitType(UNIT_TYPEID::TERRAN_BARRACKS) > 3)
         return false;
 
     float rx = GetRandomScalar();
     float ry = GetRandomScalar();
-
-    /*
-    if (staging_location_.x > 80)
-    {
-        return TryBuildStructure(ABILITY_ID::BUILD_BARRACKS, UNIT_TYPEID::TERRAN_SCV, Point2D(staging_location_.x - 2 + rx * 10, staging_location_.y + 2 + ry * 10));
-    }
-    else
-    {
-        return TryBuildStructure(ABILITY_ID::BUILD_BARRACKS, UNIT_TYPEID::TERRAN_SCV, Point2D(staging_location_.x + 2 + rx * 10, staging_location_.y - 2 + ry * 10));
-    }*/
+    
     return TryBuildStructure(ABILITY_ID::BUILD_BARRACKS, UNIT_TYPEID::TERRAN_SCV, Point2D(staging_location_.x+ rx * 5, staging_location_.y + ry * 5));
     
 }
+
 
 bool TryBuildStructure(AbilityID ability_type_for_structure, UnitTypeID unit_type, Tag location_tag) {
     
@@ -196,9 +165,7 @@ bool TryBuildStructure(AbilityID ability_type_for_structure, UnitTypeID unit_typ
     Units workers = observation->GetUnits(Unit::Alliance::Self, IsUnit(unit_type));
     const Unit* target = observation->GetUnit(location_tag);
 
-    
     if (workers.empty()) {
-        
         return false;
     }
 
@@ -217,11 +184,11 @@ bool TryBuildStructure(AbilityID ability_type_for_structure, UnitTypeID unit_typ
     // Check to see if unit can build there
     if (Query()->Placement(ability_type_for_structure, target->pos)) {
         Actions()->UnitCommand(unit, ability_type_for_structure, target);
-        //std::cout << "yes\n";
         return true;
     }
     return false;
 }
+
 
 bool TryBuildStructureRandom(AbilityID ability_type_for_structure, UnitTypeID unit_type) {
     float rx = GetRandomScalar();
@@ -229,16 +196,12 @@ bool TryBuildStructureRandom(AbilityID ability_type_for_structure, UnitTypeID un
     Point2D build_location = Point2D(staging_location_.x + rx * 15, staging_location_.y + ry * 15);
     
     
-    if (staging_location_.x > 80)
-    {
+    if (staging_location_.x > 80) {
         build_location = Point2D(staging_location_.x - 6 + rx * 5, staging_location_.y + 6 + ry * 5);
     }
-    else
-    {
+    else {
         build_location = Point2D(staging_location_.x + 6 + rx * 5, staging_location_.y - 6 + ry * 5);
     }
-    
-
     
     Units units = Observation()->GetUnits(Unit::Self, IsStructure(Observation()));
     float distance = std::numeric_limits<float>::max();
@@ -256,6 +219,7 @@ bool TryBuildStructureRandom(AbilityID ability_type_for_structure, UnitTypeID un
     }
     return TryBuildStructure(ability_type_for_structure, unit_type, build_location);
 }
+
 
 void ManageWorkers(UNIT_TYPEID worker_type, AbilityID worker_gather_command, UNIT_TYPEID vespene_building_type) {
     const ObservationInterface* observation = Observation();
@@ -321,6 +285,7 @@ void ManageWorkers(UNIT_TYPEID worker_type, AbilityID worker_gather_command, UNI
     }
 }
 
+
 void MineIdleWorkers(const Unit* worker, AbilityID worker_gather_command, UnitTypeID vespene_building_type) {
     const ObservationInterface* observation = Observation();
     Units bases = observation->GetUnits(Unit::Alliance::Self, IsTownHall());
@@ -361,12 +326,14 @@ void MineIdleWorkers(const Unit* worker, AbilityID worker_gather_command, UnitTy
     Actions()->UnitCommand(worker, worker_gather_command, valid_mineral_patch);
 }
 
+
 void AttackWithUnitType(UnitTypeID unit_type, const ObservationInterface* observation) {
     Units units = observation->GetUnits(Unit::Alliance::Self, IsUnit(unit_type));
     for (const auto& unit : units) {
         AttackWithUnit(unit, observation);
     }
 }
+
 
 void AttackWithUnit(const Unit* unit, const ObservationInterface* observation) {
     //If unit isn't doing anything make it attack.
@@ -391,7 +358,7 @@ void AttackWithUnit(const Unit* unit, const ObservationInterface* observation) {
 
 bool TryBuildFactory()
 {
-    if (CountUnitType(UNIT_TYPEID::TERRAN_FACTORY) > 2)
+    if (CountUnitType(UNIT_TYPEID::TERRAN_FACTORY) > 1)
     {
         return false;
     }
@@ -401,6 +368,7 @@ bool TryBuildFactory()
     }
     return false;
 }
+
 
 bool TryBuildFactoryLab()
 {
@@ -412,30 +380,12 @@ bool TryBuildFactoryLab()
             continue;
         }
         if (observation->GetUnit(factory->add_on_tag) == nullptr) {
-            //if (factorys_tech.size() < factorys.size() / 2) {
-                return TryBuildAddOn(ABILITY_ID::BUILD_TECHLAB_FACTORY, factory->tag);
-            //}
+            return TryBuildAddOn(ABILITY_ID::BUILD_TECHLAB_FACTORY, factory->tag);
         }
     }
     return false;
 }
 
-bool TryBuildBarrackReactor()
-{
-    const ObservationInterface* observation = Observation();
-    Units barracks = observation->GetUnits(Unit::Self, IsUnits(barrack_types));
-    Units barracks_tech = observation->GetUnits(Unit::Self, IsUnit(UNIT_TYPEID::TERRAN_BARRACKSTECHLAB));
-    for (const auto& barrack : barracks) {
-        /*
-        if (!barrack->orders.empty() || barrack->build_progress != 1) {
-            continue;
-        }*/
-        if (observation->GetUnit(barrack->add_on_tag) == nullptr) {
-            TryBuildAddOn(ABILITY_ID::BUILD_REACTOR_BARRACKS, barrack->tag);
-        }
-    }
-    return false;
-}
 
 bool TryBuildAddOn(AbilityID ability_type_for_structure, Tag base_structure) {
     float rx = GetRandomScalar();
@@ -482,73 +432,41 @@ bool FindEnemyPosition(Point2D& target_pos) {
 }
 
 
-void RetreatWithUnit(const Unit* unit, Point2D retreat_position) {
-    float dist = Distance2D(unit->pos, retreat_position);
-
-    if (dist < 10) {
-        if (unit->orders.empty()) {
-            return;
-        }
-        Actions()->UnitCommand(unit, ABILITY_ID::STOP);
-        return;
-    }
-
-    if (unit->orders.empty() && dist > 14) {
-        Actions()->UnitCommand(unit, ABILITY_ID::MOVE, retreat_position);
-    }
-    else if (!unit->orders.empty() && dist > 14) {
-        if (unit->orders.front().ability_id != ABILITY_ID::MOVE) {
-            Actions()->UnitCommand(unit, ABILITY_ID::MOVE, retreat_position);
+bool FindEnemyStructure(const ObservationInterface* observation, const Unit*& enemy_unit) {
+    Units my_units = observation->GetUnits(Unit::Alliance::Enemy);
+    for (const auto unit : my_units) {
+        if (unit->unit_type == UNIT_TYPEID::TERRAN_COMMANDCENTER ||
+            unit->unit_type == UNIT_TYPEID::TERRAN_SUPPLYDEPOT ||
+            unit->unit_type == UNIT_TYPEID::TERRAN_BARRACKS) {
+            enemy_unit = unit;
+            return true;
         }
     }
+
+    return false;
 }
 
-bool TryFindRandomPathableLocation(const Unit* unit, Point2D& target_pos) {
-    // First, find a random point inside the playable area of the map.
-    float playable_w = game_info_.playable_max.x - game_info_.playable_min.x;
-    float playable_h = game_info_.playable_max.y - game_info_.playable_min.y;
 
-    // The case where game_info_ does not provide a valid answer
-    if (playable_w == 0 || playable_h == 0) {
-        playable_w = 236;
-        playable_h = 228;
-    }
+void ScoutWithMarines() {
+    Units units = Observation()->GetUnits(Unit::Alliance::Self);
+    for (const auto& unit : units) {
+        UnitTypeID unit_type(unit->unit_type);
+        if (unit_type != UNIT_TYPEID::TERRAN_MARINE)
+            continue;
 
-    target_pos.x = playable_w * GetRandomFraction() + game_info_.playable_min.x;
-    target_pos.y = playable_h * GetRandomFraction() + game_info_.playable_min.y;
+        if (!unit->orders.empty())
+            continue;
 
-    // Now send a pathing query from the unit to that point. Can also query from point to point,
-    // but using a unit tag wherever possible will be more accurate.
-    // Note: This query must communicate with the game to get a result which affects performance.
-    // Ideally batch up the queries (using PathingDistanceBatched) and do many at once.
-    float distance = Query()->PathingDistance(unit, target_pos);
-
-    return distance > 0.1f;
-}
-
-void ScoutWithUnit(const Unit* unit, const ObservationInterface* observation) {
-    Units enemy_units = observation->GetUnits(Unit::Alliance::Enemy, IsAttackable());
-    if (!unit->orders.empty()) {
-        return;
-    }
-    Point2D target_pos;
-
-    if (FindEnemyPosition(target_pos)) {
-        if (Distance2D(unit->pos, target_pos) < 20 && enemy_units.empty()) {
-            if (TryFindRandomPathableLocation(unit, target_pos)) {
-                Actions()->UnitCommand(unit, ABILITY_ID::SMART, target_pos);
-                return;
-            }
-        }
-        else if (!enemy_units.empty())
-        {
-            Actions()->UnitCommand(unit, ABILITY_ID::ATTACK, enemy_units.front());
+        // Priority to attacking enemy structures.
+        const Unit* enemy_unit = nullptr;
+        if (FindEnemyStructure(Observation(), enemy_unit)) {
+            Actions()->UnitCommand(unit, ABILITY_ID::ATTACK, enemy_unit);
             return;
         }
-        Actions()->UnitCommand(unit, ABILITY_ID::SMART, target_pos);
-    }
-    else {
-        if (TryFindRandomPathableLocation(unit, target_pos)) {
+
+        Point2D target_pos;
+        // TODO: For efficiency, these queries should be batched.
+        if (FindEnemyPosition(target_pos)) {
             Actions()->UnitCommand(unit, ABILITY_ID::SMART, target_pos);
         }
     }
@@ -558,8 +476,13 @@ void ManageArmy() {
     const ObservationInterface* observation = Observation();
     Units enemy_units = observation->GetUnits(Unit::Alliance::Enemy);
     Units army = observation->GetUnits(Unit::Alliance::Self, IsArmy(observation));
+    size_t marine_count = CountUnitType(UNIT_TYPEID::TERRAN_MARINE);
+    size_t tank_count = CountUnitType(UNIT_TYPEID::TERRAN_SIEGETANK) + CountUnitType(UNIT_TYPEID::TERRAN_SIEGETANKSIEGED);
+    size_t medivac_count = CountUnitType(UNIT_TYPEID::TERRAN_MEDIVAC);
+    size_t marauder_count = CountUnitType(UNIT_TYPEID::TERRAN_MARAUDER);
     
-    if (CountUnitType(UNIT_TYPEID::TERRAN_SIEGETANK) > 2) {
+    if ( tank_count > 2 || marine_count > 20) {
+    //if ( marauder_count > 6) {
         for (const auto& unit : army) {
             switch (unit->unit_type.ToType()) {
                 case UNIT_TYPEID::TERRAN_SIEGETANK: {
@@ -614,6 +537,7 @@ void ManageArmy() {
             switch (unit->unit_type.ToType()) {
                 case UNIT_TYPEID::TERRAN_MARINE: {
                     AttackWithUnit(unit, observation);
+                    break;
                 }
                 default: {
                     break;
@@ -621,13 +545,59 @@ void ManageArmy() {
             }
         }
     }
+    else {
+        if (CountUnitType(UNIT_TYPEID::TERRAN_FACTORYTECHLAB) == 0) {
+            ScoutWithMarines();
+        }
+        else if (CountUnitType(UNIT_TYPEID::TERRAN_SIEGETANK) <= 2) {
+            Point2D tankLocation = Point2D(staging_location_.x - 37, staging_location_.y + 27);
+            Point2D marineLocation = Point2D(staging_location_.x - 37, staging_location_.y + 27);
+            if (staging_location_.x > 80) {
+                tankLocation = Point2D(staging_location_.x - 40, staging_location_.y + 30);
+                marineLocation = Point2D(staging_location_.x - 37, staging_location_.y + 27);
+            }
+            else {
+                tankLocation = Point2D(staging_location_.x + 40, staging_location_.y - 30);
+                marineLocation = Point2D(staging_location_.x + 37, staging_location_.y - 27);
+            }
+            for (const auto& unit : army) {
+                switch (unit->unit_type.ToType()) {
+                    case UNIT_TYPEID::TERRAN_SIEGETANK: {
+                        float dist = Distance2D(unit->pos, tankLocation);
+                        if (dist < 2) {
+                            if (!unit->orders.empty()) {
+                                Actions()->UnitCommand(unit, ABILITY_ID::STOP);
+                            }
+                        }
+                        else {
+                            Actions()->UnitCommand(unit, ABILITY_ID::MOVE, tankLocation);
+                        }
+                        break;
+                    }
+                    case UNIT_TYPEID::TERRAN_MARINE: {
+                        float dist = Distance2D(unit->pos, marineLocation);
+                        if (dist < 2) {
+                            if (!unit->orders.empty()) {
+                                Actions()->UnitCommand(unit, ABILITY_ID::STOP);
+                            }
+                        }
+                        else {
+                            Actions()->UnitCommand(unit, ABILITY_ID::MOVE, marineLocation);
+                        }
+                        break;
+                    }
+                    default: {
+                        break;
+                    }
+                }
+            }
+        }
+    }
 }
 
 
-
-std::vector<UNIT_TYPEID> barrack_types = { UNIT_TYPEID::TERRAN_BARRACKSFLYING, UNIT_TYPEID::TERRAN_BARRACKS };
-std::vector<UNIT_TYPEID> factory_types = { UNIT_TYPEID::TERRAN_FACTORYFLYING, UNIT_TYPEID::TERRAN_FACTORY };
+std::vector<UNIT_TYPEID> barrack_types = { UNIT_TYPEID::TERRAN_BARRACKS };
+std::vector<UNIT_TYPEID> factory_types = { UNIT_TYPEID::TERRAN_FACTORY };
 std::vector<UNIT_TYPEID> supply_depot_types = { UNIT_TYPEID::TERRAN_SUPPLYDEPOT, UNIT_TYPEID::TERRAN_SUPPLYDEPOTLOWERED };
 std::vector<UNIT_TYPEID> siege_tank_types = { UNIT_TYPEID::TERRAN_SIEGETANK, UNIT_TYPEID::TERRAN_SIEGETANKSIEGED };
-std::vector<UNIT_TYPEID> bio_types = { UNIT_TYPEID::TERRAN_MARINE, UNIT_TYPEID::TERRAN_MARAUDER, UNIT_TYPEID::TERRAN_GHOST, UNIT_TYPEID::TERRAN_REAPER /*reaper*/ };
 std::string last_action_text_;
