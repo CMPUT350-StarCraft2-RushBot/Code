@@ -5,7 +5,6 @@ size_t CountUnitType(UNIT_TYPEID unit_type) {
 
 bool TryBuildStructure(AbilityID ability_type_for_structure, UnitTypeID unit_type, Point2D location, bool isExpansion = false) {
 
-    //std::cout << "TryBuildStructure started!\n";
     const ObservationInterface* observation = Observation();
     Units workers = observation->GetUnits(Unit::Alliance::Self, IsUnit(unit_type));
 
@@ -481,7 +480,7 @@ void ManageArmy() {
     size_t medivac_count = CountUnitType(UNIT_TYPEID::TERRAN_MEDIVAC);
     size_t marauder_count = CountUnitType(UNIT_TYPEID::TERRAN_MARAUDER);
     
-    if ( tank_count > 2 || marine_count > 20) {
+    if ( tank_count > 3 || marine_count > 20) {
     //if ( marauder_count > 6) {
         for (const auto& unit : army) {
             switch (unit->unit_type.ToType()) {
@@ -549,9 +548,18 @@ void ManageArmy() {
         if (CountUnitType(UNIT_TYPEID::TERRAN_FACTORYTECHLAB) == 0) {
             ScoutWithMarines();
         }
-        else if (CountUnitType(UNIT_TYPEID::TERRAN_SIEGETANK) <= 2) {
+        else if (CountUnitType(UNIT_TYPEID::TERRAN_SIEGETANK) <= 3) {
             Point2D tankLocation = Point2D(staging_location_.x - 37, staging_location_.y + 27);
             Point2D marineLocation = Point2D(staging_location_.x - 37, staging_location_.y + 27);
+            /*
+            if (staging_location_.x > 80) {
+                tankLocation = Point2D(staging_location_.x - 40, staging_location_.y + 78);
+                marineLocation = Point2D(staging_location_.x - 37, staging_location_.y + 72);
+            }
+            else {
+                tankLocation = Point2D(staging_location_.x + 40, staging_location_.y - 78);
+                marineLocation = Point2D(staging_location_.x + 37, staging_location_.y - 72);
+            }*/
             if (staging_location_.x > 80) {
                 tankLocation = Point2D(staging_location_.x - 40, staging_location_.y + 30);
                 marineLocation = Point2D(staging_location_.x - 37, staging_location_.y + 27);
