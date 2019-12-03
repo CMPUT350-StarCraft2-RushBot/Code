@@ -549,8 +549,8 @@ void ManageArmy() {
             ScoutWithMarines();
         }
         else if (CountUnitType(UNIT_TYPEID::TERRAN_SIEGETANK) <= 3) {
-            Point2D tankLocation = Point2D(staging_location_.x - 37, staging_location_.y + 27);
-            Point2D marineLocation = Point2D(staging_location_.x - 37, staging_location_.y + 27);
+            Point2D tankLocation = Point2D(staging_location_.x - 23, staging_location_.y + 13);
+            Point2D marineLocation = Point2D(staging_location_.x - 23, staging_location_.y + 13);
             /*
             if (staging_location_.x > 80) {
                 tankLocation = Point2D(staging_location_.x - 40, staging_location_.y + 78);
@@ -561,12 +561,12 @@ void ManageArmy() {
                 marineLocation = Point2D(staging_location_.x + 37, staging_location_.y - 72);
             }*/
             if (staging_location_.x > 80) {
-                tankLocation = Point2D(staging_location_.x - 40, staging_location_.y + 30);
-                marineLocation = Point2D(staging_location_.x - 37, staging_location_.y + 27);
+                tankLocation = Point2D(staging_location_.x - 23, staging_location_.y + 13);
+                marineLocation = Point2D(staging_location_.x - 23, staging_location_.y + 13);
             }
             else {
-                tankLocation = Point2D(staging_location_.x + 40, staging_location_.y - 30);
-                marineLocation = Point2D(staging_location_.x + 37, staging_location_.y - 27);
+                tankLocation = Point2D(staging_location_.x + 23, staging_location_.y - 13);
+                marineLocation = Point2D(staging_location_.x + 23, staging_location_.y - 13);
             }
             for (const auto& unit : army) {
                 switch (unit->unit_type.ToType()) {
