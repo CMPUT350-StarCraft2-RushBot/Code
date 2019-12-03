@@ -25,7 +25,7 @@ virtual void OnStep() final {
 virtual void OnUnitIdle(const Unit* unit) final {
     switch (unit->unit_type.ToType()) {
         case UNIT_TYPEID::TERRAN_COMMANDCENTER: {
-            if (CountUnitType(UNIT_TYPEID::TERRAN_SCV) < 20) {
+            if (CountUnitType(UNIT_TYPEID::TERRAN_SCV) < 21) {
                 Actions()->UnitCommand(unit, ABILITY_ID::TRAIN_SCV);
             }
             break;
