@@ -181,10 +181,6 @@ bool TryBuildBarracks() {
     if (CountUnitType(UNIT_TYPEID::TERRAN_BARRACKS) > 3)
         return false;
 
-    //float rx = GetRandomScalar();
-    //float ry = GetRandomScalar();
-    
-    //return TryBuildStructure(ABILITY_ID::BUILD_BARRACKS, UNIT_TYPEID::TERRAN_SCV, Point2D(staging_location_.x+ rx * 5, staging_location_.y + ry * 5));
     Point2D defaultLocation;
     int barrackCount = CountUnitType(UNIT_TYPEID::TERRAN_BARRACKS);
 
@@ -395,7 +391,6 @@ void AttackWithUnit(const Unit* unit, const ObservationInterface* observation) {
     //If unit isn't doing anything make it attack.
     Units enemy_units = observation->GetUnits(Unit::Alliance::Enemy);
     if (enemy_units.empty()) {
-        //const GameInfo& game_info = Observation()->GetGameInfo();
         Actions()->UnitCommand(unit, ABILITY_ID::ATTACK_ATTACK, game_info_.enemy_start_locations.front());
         return;
     }
@@ -459,8 +454,6 @@ bool TryBuildFactory()
 
     }
     return false;
-
- 
 }
 
 
@@ -546,7 +539,7 @@ void ManageArmy() {
     Units army = observation->GetUnits(Unit::Alliance::Self, IsArmy(observation));
     size_t marine_count = CountUnitType(UNIT_TYPEID::TERRAN_MARINE);
     size_t tank_count = CountUnitType(UNIT_TYPEID::TERRAN_SIEGETANK) + CountUnitType(UNIT_TYPEID::TERRAN_SIEGETANKSIEGED);
-    
+
     Point2D tankLocation = Point2D(staging_location_.x - 23, staging_location_.y + 13);
     Point2D marineLocation = Point2D(staging_location_.x - 23, staging_location_.y + 13);
     if (staging_location_.x > 80) {
@@ -571,7 +564,7 @@ void ManageArmy() {
     }
 
 
-    if ( tank_count > 3 || marine_count > 20) {
+    if (tank_count > 3 || marine_count > 20) {
         for (const auto& unit : army) {
             switch (unit->unit_type.ToType()) {
                 case UNIT_TYPEID::TERRAN_SIEGETANK: {
