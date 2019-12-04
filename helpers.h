@@ -4,6 +4,8 @@ static int isBuilt = 0;
 
 static int attackFlag = 0;
 
+static int loccount = 0;
+
 struct IsAttackable {
     bool operator()(const Unit& unit) {
         switch (unit.unit_type.ToType()) {

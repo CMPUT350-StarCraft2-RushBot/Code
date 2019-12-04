@@ -10,7 +10,6 @@ virtual void OnStep() final {
     TryBuildRefinery();
     ManageWorkers(UNIT_TYPEID::TERRAN_SCV, ABILITY_ID::HARVEST_GATHER, UNIT_TYPEID::TERRAN_REFINERY);
     TryBuildSupplyDepot();
-    
     if (CountUnitType(UNIT_TYPEID::TERRAN_FACTORY) < 2) {
         TryBuildFactory();
     }

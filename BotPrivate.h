@@ -194,14 +194,6 @@ bool TryBuildStructureRandom(AbilityID ability_type_for_structure, UnitTypeID un
     float ry = GetRandomScalar();
     Point2D build_location = Point2D(staging_location_.x + rx * 15, staging_location_.y + ry * 15);
     
-    
-    if (staging_location_.x > 80) {
-        build_location = Point2D(staging_location_.x - 6 + rx * 5, staging_location_.y + 6 + ry * 5);
-    }
-    else {
-        build_location = Point2D(staging_location_.x + 6 + rx * 5, staging_location_.y - 6 + ry * 5);
-    }
-    
     Units units = Observation()->GetUnits(Unit::Self, IsStructure(Observation()));
     float distance = std::numeric_limits<float>::max();
     for (const auto& u : units) {
@@ -338,8 +330,8 @@ void AttackWithUnit(const Unit* unit, const ObservationInterface* observation) {
     //If unit isn't doing anything make it attack.
     Units enemy_units = observation->GetUnits(Unit::Alliance::Enemy);
     if (enemy_units.empty()) {
-        const GameInfo& game_info = Observation()->GetGameInfo();
-        Actions()->UnitCommand(unit, ABILITY_ID::ATTACK_ATTACK, game_info.enemy_start_locations.front());
+        //const GameInfo& game_info = Observation()->GetGameInfo();
+        Actions()->UnitCommand(unit, ABILITY_ID::ATTACK_ATTACK, game_info_.enemy_start_locations.front());
         return;
     }
 
@@ -445,8 +437,9 @@ bool FindEnemyStructure(const ObservationInterface* observation, const Unit*& en
     return false;
 }
 
-
+/*
 void ScoutWithMarines() {
+    Point2D potentialLocations[4] = {Point2D(33.5, 33.5), Point2D(33.5, 158.5), Point2D(158.5, 33.5), Point2D(158.5, 158.5)};
     Units units = Observation()->GetUnits(Unit::Alliance::Self);
     for (const auto& unit : units) {
         UnitTypeID unit_type(unit->unit_type);
@@ -457,19 +450,10 @@ void ScoutWithMarines() {
             continue;
 
         // Priority to attacking enemy structures.
-        const Unit* enemy_unit = nullptr;
-        if (FindEnemyStructure(Observation(), enemy_unit)) {
-            Actions()->UnitCommand(unit, ABILITY_ID::ATTACK, enemy_unit);
-            return;
-        }
-
-        Point2D target_pos;
-        // TODO: For efficiency, these queries should be batched.
-        if (FindEnemyPosition(target_pos)) {
-            Actions()->UnitCommand(unit, ABILITY_ID::SMART, target_pos);
-        }
+        Actions()->UnitCommand(unit, ABILITY_ID::MOVE, loc);
+        
     }
-}
+}*/
 
 void ManageArmy() {
     const ObservationInterface* observation = Observation();
@@ -477,11 +461,11 @@ void ManageArmy() {
     Units army = observation->GetUnits(Unit::Alliance::Self, IsArmy(observation));
     size_t marine_count = CountUnitType(UNIT_TYPEID::TERRAN_MARINE);
     size_t tank_count = CountUnitType(UNIT_TYPEID::TERRAN_SIEGETANK) + CountUnitType(UNIT_TYPEID::TERRAN_SIEGETANKSIEGED);
-    size_t medivac_count = CountUnitType(UNIT_TYPEID::TERRAN_MEDIVAC);
-    size_t marauder_count = CountUnitType(UNIT_TYPEID::TERRAN_MARAUDER);
     
-    if ( tank_count > 3 || marine_count > 20) {
-    //if ( marauder_count > 6) {
+    
+    
+    if ( tank_count > 2 || marine_count > 20) {
+    //if (!enemy_units.empty()) {
         for (const auto& unit : army) {
             switch (unit->unit_type.ToType()) {
                 case UNIT_TYPEID::TERRAN_SIEGETANK: {
@@ -545,28 +529,66 @@ void ManageArmy() {
         }
     }
     else {
-        if (CountUnitType(UNIT_TYPEID::TERRAN_FACTORYTECHLAB) == 0) {
-            ScoutWithMarines();
+        if (CountUnitType(UNIT_TYPEID::TERRAN_FACTORYTECHLAB) <= 1) {
+            if (loccount < 3) {
+                for (const auto& unit : army) {
+                    UnitTypeID unit_type(unit->unit_type);
+                    if (unit_type != UNIT_TYPEID::TERRAN_MARINE)
+                        continue;
+                    if (!unit->orders.empty())
+                        continue;
+                    Actions()->UnitCommand(unit, ABILITY_ID::ATTACK_ATTACK, game_info_.enemy_start_locations[loccount]);
+                    loccount++;
+                }
+            }
+            for (const auto& unit : army) {
+                switch (unit->unit_type.ToType()) {
+                    case UNIT_TYPEID::TERRAN_MARINE: {
+                        float d0 = Distance2D(unit->pos, Observation()->GetGameInfo().enemy_start_locations[0]);
+                        float d1 = Distance2D(unit->pos, Observation()->GetGameInfo().enemy_start_locations[1]);
+                        float d2 = Distance2D(unit->pos, Observation()->GetGameInfo().enemy_start_locations[2]);
+                        if (d0 < 5) {
+                            Actions()->UnitCommand(unit, ABILITY_ID::MOVE, staging_location_);
+                            game_info_.enemy_start_locations.erase(std::remove(game_info_.enemy_start_locations.begin(), game_info_.enemy_start_locations.end(), Observation()->GetGameInfo().enemy_start_locations[0]), game_info_.enemy_start_locations.end());
+                        }
+                        if (d1 < 5) {
+                            Actions()->UnitCommand(unit, ABILITY_ID::MOVE, staging_location_);
+                            game_info_.enemy_start_locations.erase(std::remove(game_info_.enemy_start_locations.begin(), game_info_.enemy_start_locations.end(), Observation()->GetGameInfo().enemy_start_locations[1]), game_info_.enemy_start_locations.end());
+                        }
+                        if (d2 < 5) {
+                            Actions()->UnitCommand(unit, ABILITY_ID::MOVE, staging_location_);
+                            game_info_.enemy_start_locations.erase(std::remove(game_info_.enemy_start_locations.begin(), game_info_.enemy_start_locations.end(), Observation()->GetGameInfo().enemy_start_locations[2]), game_info_.enemy_start_locations.end());
+                        }
+                        break;
+                    }
+                    default: {
+                        break;
+                    }
+                }
+            }
         }
-        else if (CountUnitType(UNIT_TYPEID::TERRAN_SIEGETANK) <= 3) {
+        else if (CountUnitType(UNIT_TYPEID::TERRAN_SIEGETANK) <= 2) {
             Point2D tankLocation = Point2D(staging_location_.x - 23, staging_location_.y + 13);
             Point2D marineLocation = Point2D(staging_location_.x - 23, staging_location_.y + 13);
-            /*
             if (staging_location_.x > 80) {
-                tankLocation = Point2D(staging_location_.x - 40, staging_location_.y + 78);
-                marineLocation = Point2D(staging_location_.x - 37, staging_location_.y + 72);
+                if (staging_location_.y < 80) {
+                    tankLocation = Point2D(staging_location_.x - 30, staging_location_.y + 5);
+                    marineLocation = Point2D(staging_location_.x - 30, staging_location_.y + 5);
+                }
+                else {
+                    tankLocation = Point2D(staging_location_.x - 5, staging_location_.y - 30);
+                    marineLocation = Point2D(staging_location_.x - 5, staging_location_.y - 30);
+                }
             }
             else {
-                tankLocation = Point2D(staging_location_.x + 40, staging_location_.y - 78);
-                marineLocation = Point2D(staging_location_.x + 37, staging_location_.y - 72);
-            }*/
-            if (staging_location_.x > 80) {
-                tankLocation = Point2D(staging_location_.x - 23, staging_location_.y + 13);
-                marineLocation = Point2D(staging_location_.x - 23, staging_location_.y + 13);
-            }
-            else {
-                tankLocation = Point2D(staging_location_.x + 23, staging_location_.y - 13);
-                marineLocation = Point2D(staging_location_.x + 23, staging_location_.y - 13);
+                if (staging_location_.y > 80) {
+                    tankLocation = Point2D(staging_location_.x + 30, staging_location_.y - 5);
+                    marineLocation = Point2D(staging_location_.x + 30, staging_location_.y - 5);
+                }
+                else {
+                    tankLocation = Point2D(staging_location_.x + 5, staging_location_.y + 30);
+                    marineLocation = Point2D(staging_location_.x + 5, staging_location_.y + 30);
+                }
             }
             for (const auto& unit : army) {
                 switch (unit->unit_type.ToType()) {
@@ -590,7 +612,7 @@ void ManageArmy() {
                             }
                         }
                         else {
-                            Actions()->UnitCommand(unit, ABILITY_ID::MOVE, marineLocation);
+                            Actions()->UnitCommand(unit, ABILITY_ID::MOVE, tankLocation);
                         }
                         break;
                     }
@@ -601,6 +623,7 @@ void ManageArmy() {
             }
         }
     }
+    
 }
 
 
