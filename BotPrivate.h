@@ -542,18 +542,37 @@ bool FindEnemyStructure(const ObservationInterface* observation, const Unit*& en
 
 void ManageArmy() {
     const ObservationInterface* observation = Observation();
-
     Units enemy_units = observation->GetUnits(Unit::Alliance::Enemy);
     Units army = observation->GetUnits(Unit::Alliance::Self, IsArmy(observation));
-
     size_t marine_count = CountUnitType(UNIT_TYPEID::TERRAN_MARINE);
     size_t tank_count = CountUnitType(UNIT_TYPEID::TERRAN_SIEGETANK) + CountUnitType(UNIT_TYPEID::TERRAN_SIEGETANKSIEGED);
+    
+    Point2D tankLocation = Point2D(staging_location_.x - 23, staging_location_.y + 13);
+    Point2D marineLocation = Point2D(staging_location_.x - 23, staging_location_.y + 13);
+    if (staging_location_.x > 80) {
+        if (staging_location_.y < 80) {
+            tankLocation = Point2D(staging_location_.x - 38, staging_location_.y + 10);
+            marineLocation = Point2D(staging_location_.x - 38, staging_location_.y + 10);
+        }
+        else {
+            tankLocation = Point2D(staging_location_.x - 10, staging_location_.y - 38);
+            marineLocation = Point2D(staging_location_.x - 10, staging_location_.y - 38);
+        }
+    }
+    else {
+        if (staging_location_.y > 80) {
+            tankLocation = Point2D(staging_location_.x + 38, staging_location_.y - 10);
+            marineLocation = Point2D(staging_location_.x + 38, staging_location_.y - 10);
+        }
+        else {
+            tankLocation = Point2D(staging_location_.x + 10, staging_location_.y + 38);
+            marineLocation = Point2D(staging_location_.x + 10, staging_location_.y + 38);
+        }
+    }
 
 
     if ( tank_count > 3 || marine_count > 20) {
-    //if (!enemy_units.empty()) {
         for (const auto& unit : army) {
-          
             switch (unit->unit_type.ToType()) {
                 case UNIT_TYPEID::TERRAN_SIEGETANK: {
                     if (!enemy_units.empty()) {
@@ -641,50 +660,19 @@ void ManageArmy() {
                         float d1 = Distance2D(unit->pos, Observation()->GetGameInfo().enemy_start_locations[1]);
                         float d2 = Distance2D(unit->pos, Observation()->GetGameInfo().enemy_start_locations[2]);
                         if (d0 < 5) {
-                            Actions()->UnitCommand(unit, ABILITY_ID::MOVE, staging_location_);
+                            Actions()->UnitCommand(unit, ABILITY_ID::MOVE, marineLocation);
                             game_info_.enemy_start_locations.erase(std::remove(game_info_.enemy_start_locations.begin(), game_info_.enemy_start_locations.end(), Observation()->GetGameInfo().enemy_start_locations[0]), game_info_.enemy_start_locations.end());
                         }
                         if (d1 < 5) {
-                            Actions()->UnitCommand(unit, ABILITY_ID::MOVE, staging_location_);
+                            Actions()->UnitCommand(unit, ABILITY_ID::MOVE, marineLocation);
                             game_info_.enemy_start_locations.erase(std::remove(game_info_.enemy_start_locations.begin(), game_info_.enemy_start_locations.end(), Observation()->GetGameInfo().enemy_start_locations[1]), game_info_.enemy_start_locations.end());
                         }
                         if (d2 < 5) {
-                            Actions()->UnitCommand(unit, ABILITY_ID::MOVE, staging_location_);
+                            Actions()->UnitCommand(unit, ABILITY_ID::MOVE, marineLocation);
                             game_info_.enemy_start_locations.erase(std::remove(game_info_.enemy_start_locations.begin(), game_info_.enemy_start_locations.end(), Observation()->GetGameInfo().enemy_start_locations[2]), game_info_.enemy_start_locations.end());
                         }
                         break;
                     }
-                    default: {
-                        break;
-                    }
-                }
-            }
-        }
-        else if (CountUnitType(UNIT_TYPEID::TERRAN_SIEGETANK) <= 3) {
-            Point2D tankLocation = Point2D(staging_location_.x - 23, staging_location_.y + 13);
-            Point2D marineLocation = Point2D(staging_location_.x - 23, staging_location_.y + 13);
-            if (staging_location_.x > 80) {
-                if (staging_location_.y < 80) {
-                    tankLocation = Point2D(staging_location_.x - 35, staging_location_.y + 10);
-                    marineLocation = Point2D(staging_location_.x - 35, staging_location_.y + 10);
-                }
-                else {
-                    tankLocation = Point2D(staging_location_.x - 10, staging_location_.y - 35);
-                    marineLocation = Point2D(staging_location_.x - 10, staging_location_.y - 35);
-                }
-            }
-            else {
-                if (staging_location_.y > 80) {
-                    tankLocation = Point2D(staging_location_.x + 35, staging_location_.y - 10);
-                    marineLocation = Point2D(staging_location_.x + 35, staging_location_.y - 10);
-                }
-                else {
-                    tankLocation = Point2D(staging_location_.x + 10, staging_location_.y + 35);
-                    marineLocation = Point2D(staging_location_.x + 10, staging_location_.y + 35);
-                }
-            }
-            for (const auto& unit : army) {
-                switch (unit->unit_type.ToType()) {
                     case UNIT_TYPEID::TERRAN_SIEGETANK: {
                         float dist = Distance2D(unit->pos, tankLocation);
                         if (dist < 2) {
@@ -697,9 +685,30 @@ void ManageArmy() {
                         }
                         break;
                     }
+                    default: {
+                        break;
+                    }
+                }
+            }
+        }
+        else if (CountUnitType(UNIT_TYPEID::TERRAN_SIEGETANK) <= 3) {
+            for (const auto& unit : army) {
+                switch (unit->unit_type.ToType()) {
+                    case UNIT_TYPEID::TERRAN_SIEGETANK: {
+                        float dist = Distance2D(unit->pos, tankLocation);
+                        if (dist < 3) {
+                            if (!unit->orders.empty()) {
+                                Actions()->UnitCommand(unit, ABILITY_ID::STOP);
+                            }
+                        }
+                        else {
+                            Actions()->UnitCommand(unit, ABILITY_ID::MOVE, tankLocation);
+                        }
+                        break;
+                    }
                     case UNIT_TYPEID::TERRAN_MARINE: {
                         float dist = Distance2D(unit->pos, marineLocation);
-                        if (dist < 2) {
+                        if (dist < 3) {
                             if (!unit->orders.empty()) {
                                 Actions()->UnitCommand(unit, ABILITY_ID::STOP);
                             }

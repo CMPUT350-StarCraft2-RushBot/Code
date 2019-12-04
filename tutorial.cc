@@ -35,7 +35,7 @@ int main(int argc, char* argv[]) {
     RushBot mybot;
     coordinator.SetParticipants({
         CreateParticipant(Race::Terran, &mybot),
-        CreateComputer(Race::Protoss, Difficulty::HardVeryHard)
+        CreateComputer(Race::Zerg, Difficulty::HardVeryHard)
     });
 
     coordinator.LaunchStarcraft();

@@ -119,17 +119,3 @@ bool FindEnemyStructure(const ObservationInterface* observation, const Unit*& en
 
     return false;
 }
-
-// This function gives me warning
-/*
-bool GetRandomUnit(const Unit*& unit_out, const ObservationInterface* observation, UnitTypeID unit_type) {
-    Units my_units = observation->GetUnits(Unit::Alliance::Self);
-    std::random_shuffle(my_units.begin(), my_units.end()); // Doesn't work, or doesn't work well.
-    for (const auto unit : my_units) {
-        if (unit->unit_type == unit_type) {
-            unit_out = unit;
-            return true;
-        }
-    }
-    return false;
-}*/
