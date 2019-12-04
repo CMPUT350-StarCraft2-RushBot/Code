@@ -42,7 +42,10 @@ virtual void OnUnitIdle(const Unit* unit) final {
             break;
         }
         case UNIT_TYPEID::TERRAN_FACTORY: {
-            Actions()->UnitCommand(unit, ABILITY_ID::TRAIN_SIEGETANK);
+            size_t tank_count = CountUnitType(UNIT_TYPEID::TERRAN_SIEGETANK) + CountUnitType(UNIT_TYPEID::TERRAN_SIEGETANKSIEGED);
+            if (tank_count < 7) {
+                Actions()->UnitCommand(unit, ABILITY_ID::TRAIN_SIEGETANK);
+            }
             break;
         }
         default: {

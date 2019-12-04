@@ -16,7 +16,8 @@ bool TryBuildStructure(AbilityID ability_type_for_structure, UnitTypeID unit_typ
     // Check to see if there is already a worker heading out to build it
     for (const auto& worker : workers) {
         for (const auto& order : worker->orders) {
-            if (order.ability_id == ability_type_for_structure) {                return false;
+            if (order.ability_id == ability_type_for_structure) {
+                return false;
             }
         }
     }
@@ -66,10 +67,40 @@ bool TryBuildSupplyDepot()  {
         }
     }
 
-    // Try and build a supply depot. Find a random SCV and give it the order.
-    float rx = GetRandomScalar();
-    float ry = GetRandomScalar();
-    Point2D build_location = Point2D(staging_location_.x + rx * 15, staging_location_.y + ry * 15);
+    Point2D defaultLocation;
+    int supplyCount = CountUnitType(UNIT_TYPEID::TERRAN_SUPPLYDEPOT);
+
+    //Find the default location we can start building on
+    if (staging_location_.x > 80) {
+        if (staging_location_.y < 80) {
+            defaultLocation = Point2D(staging_location_.x - 4, staging_location_.y - 1);
+        }
+        else {
+            defaultLocation = Point2D(staging_location_.x - 4, staging_location_.y);
+        }
+    }
+    else {
+        if (staging_location_.y > 80) {
+            defaultLocation = Point2D(staging_location_.x + 3, staging_location_.y);
+        }
+        else {
+            defaultLocation = Point2D(staging_location_.x + 3, staging_location_.y - 1);
+        }
+    }
+
+    Point2D build_location;
+
+    //Build next to what we already had built (If any)
+    if (defaultLocation.x < staging_location_.x)
+        build_location.x = defaultLocation.x - 2 * supplyCount;
+    else
+        build_location.x = defaultLocation.x + 2 * supplyCount;
+
+    if (defaultLocation.y < staging_location_.y)
+        build_location.y = defaultLocation.y - 2;
+    else
+        build_location.y = defaultLocation.y + 2;
+
     return TryBuildStructure(ABILITY_ID::BUILD_SUPPLYDEPOT, UNIT_TYPEID::TERRAN_SCV, build_location);
 }
 
@@ -150,10 +181,44 @@ bool TryBuildBarracks() {
     if (CountUnitType(UNIT_TYPEID::TERRAN_BARRACKS) > 3)
         return false;
 
-    float rx = GetRandomScalar();
-    float ry = GetRandomScalar();
+    //float rx = GetRandomScalar();
+    //float ry = GetRandomScalar();
     
-    return TryBuildStructure(ABILITY_ID::BUILD_BARRACKS, UNIT_TYPEID::TERRAN_SCV, Point2D(staging_location_.x+ rx * 5, staging_location_.y + ry * 5));
+    //return TryBuildStructure(ABILITY_ID::BUILD_BARRACKS, UNIT_TYPEID::TERRAN_SCV, Point2D(staging_location_.x+ rx * 5, staging_location_.y + ry * 5));
+    Point2D defaultLocation;
+    int barrackCount = CountUnitType(UNIT_TYPEID::TERRAN_BARRACKS);
+
+    //Find a location that we can start building
+    if (staging_location_.x > 80) {
+        if (staging_location_.y < 80) {
+            defaultLocation = Point2D(staging_location_.x - 3, staging_location_.y + 2);
+        }
+        else {
+            defaultLocation = Point2D(staging_location_.x - 3, staging_location_.y - 3);
+        }
+    }
+    else {
+        if (staging_location_.y > 80) {
+            defaultLocation = Point2D(staging_location_.x + 2, staging_location_.y - 3);
+        }
+        else {
+            defaultLocation = Point2D(staging_location_.x + 2, staging_location_.y + 3);
+        }
+    }
+
+    //Build next to what we already had built (If any)
+    Point2D build_location;
+    if (defaultLocation.x < staging_location_.x)
+        build_location.x = defaultLocation.x - 3 * barrackCount;
+    else
+        build_location.x = defaultLocation.x + 3 * barrackCount;
+
+    if (defaultLocation.y < staging_location_.y)
+        build_location.y = defaultLocation.y - 2 ;
+    else
+        build_location.y = defaultLocation.y + 2 ;
+
+    return TryBuildStructure(ABILITY_ID::BUILD_BARRACKS, UNIT_TYPEID::TERRAN_SCV, build_location);
     
 }
 
@@ -355,9 +420,47 @@ bool TryBuildFactory()
     }
     const ObservationInterface* observation = Observation();
     if (Observation()->GetMinerals() > 150 && Observation()->GetVespene() > 100) {
-        return TryBuildStructureRandom(ABILITY_ID::BUILD_FACTORY, UNIT_TYPEID::TERRAN_SCV);
+
+        Point2D defaultLocation;
+        int factoryCount = CountUnitType(UNIT_TYPEID::TERRAN_FACTORY);
+
+        //Find default location we can start building
+        if (staging_location_.x > 80) {
+            if (staging_location_.y < 80) {
+                defaultLocation = Point2D(staging_location_.x - 3, staging_location_.y + 8);
+            }
+            else {
+                defaultLocation = Point2D(staging_location_.x - 3, staging_location_.y - 8);
+            }
+        }
+        else {
+            if (staging_location_.y > 80) {
+                defaultLocation = Point2D(staging_location_.x + 2, staging_location_.y - 8);
+            }
+            else {
+                defaultLocation = Point2D(staging_location_.x + 2, staging_location_.y + 8);
+            }
+        }
+
+        Point2D build_location;
+        //Build on top of what we already had built (If any)
+        if (defaultLocation.x < staging_location_.x)
+            build_location.x = defaultLocation.x - 3 ;
+        else
+            build_location.x = defaultLocation.x + 3 ;
+
+        if (defaultLocation.y < staging_location_.y)
+            build_location.y = defaultLocation.y - 3 * factoryCount;
+        else
+            build_location.y = defaultLocation.y + 3 * factoryCount;
+
+        return TryBuildStructure(ABILITY_ID::BUILD_FACTORY, UNIT_TYPEID::TERRAN_SCV, build_location);
+
+
     }
     return false;
+
+ 
 }
 
 
@@ -437,36 +540,20 @@ bool FindEnemyStructure(const ObservationInterface* observation, const Unit*& en
     return false;
 }
 
-/*
-void ScoutWithMarines() {
-    Point2D potentialLocations[4] = {Point2D(33.5, 33.5), Point2D(33.5, 158.5), Point2D(158.5, 33.5), Point2D(158.5, 158.5)};
-    Units units = Observation()->GetUnits(Unit::Alliance::Self);
-    for (const auto& unit : units) {
-        UnitTypeID unit_type(unit->unit_type);
-        if (unit_type != UNIT_TYPEID::TERRAN_MARINE)
-            continue;
-
-        if (!unit->orders.empty())
-            continue;
-
-        // Priority to attacking enemy structures.
-        Actions()->UnitCommand(unit, ABILITY_ID::MOVE, loc);
-        
-    }
-}*/
-
 void ManageArmy() {
     const ObservationInterface* observation = Observation();
+
     Units enemy_units = observation->GetUnits(Unit::Alliance::Enemy);
     Units army = observation->GetUnits(Unit::Alliance::Self, IsArmy(observation));
+
     size_t marine_count = CountUnitType(UNIT_TYPEID::TERRAN_MARINE);
     size_t tank_count = CountUnitType(UNIT_TYPEID::TERRAN_SIEGETANK) + CountUnitType(UNIT_TYPEID::TERRAN_SIEGETANKSIEGED);
-    
-    
-    
-    if ( tank_count > 2 || marine_count > 20) {
+
+
+    if ( tank_count > 3 || marine_count > 20) {
     //if (!enemy_units.empty()) {
         for (const auto& unit : army) {
+          
             switch (unit->unit_type.ToType()) {
                 case UNIT_TYPEID::TERRAN_SIEGETANK: {
                     if (!enemy_units.empty()) {
@@ -474,10 +561,11 @@ void ManageArmy() {
                         for (const auto& u : enemy_units) {
                             float d = Distance2D(u->pos, unit->pos);
                             if (d < distance) {
-                                distance = d;
+                                if (!u->is_flying)
+                                    distance = d;
                             }
                         }
-                        if (distance < 11) {
+                        if (distance < 11 && unit->pos.z <= 10 || distance < 11 && unit->pos.z >= 11.95) {
                             Actions()->UnitCommand(unit, ABILITY_ID::MORPH_SIEGEMODE);
                         }
                         else {
@@ -495,10 +583,15 @@ void ManageArmy() {
                         for (const auto& u : enemy_units) {
                             float d = Distance2D(u->pos, unit->pos);
                             if (d < distance) {
-                                distance = d;
+                                if (!u->is_flying)
+                                    distance = d;
                             }
                         }
-                        if (distance > 13) {
+                        if (unit->pos.z > 10 && unit->pos.z < 11.95 )
+                        {
+                            Actions()->UnitCommand(unit, ABILITY_ID::MORPH_UNSIEGE);
+                        }
+                        else if (distance > 13) {
                             Actions()->UnitCommand(unit, ABILITY_ID::MORPH_UNSIEGE);
                         }
                         else {
@@ -567,27 +660,27 @@ void ManageArmy() {
                 }
             }
         }
-        else if (CountUnitType(UNIT_TYPEID::TERRAN_SIEGETANK) <= 2) {
+        else if (CountUnitType(UNIT_TYPEID::TERRAN_SIEGETANK) <= 3) {
             Point2D tankLocation = Point2D(staging_location_.x - 23, staging_location_.y + 13);
             Point2D marineLocation = Point2D(staging_location_.x - 23, staging_location_.y + 13);
             if (staging_location_.x > 80) {
                 if (staging_location_.y < 80) {
-                    tankLocation = Point2D(staging_location_.x - 30, staging_location_.y + 5);
-                    marineLocation = Point2D(staging_location_.x - 30, staging_location_.y + 5);
+                    tankLocation = Point2D(staging_location_.x - 35, staging_location_.y + 10);
+                    marineLocation = Point2D(staging_location_.x - 35, staging_location_.y + 10);
                 }
                 else {
-                    tankLocation = Point2D(staging_location_.x - 5, staging_location_.y - 30);
-                    marineLocation = Point2D(staging_location_.x - 5, staging_location_.y - 30);
+                    tankLocation = Point2D(staging_location_.x - 10, staging_location_.y - 35);
+                    marineLocation = Point2D(staging_location_.x - 10, staging_location_.y - 35);
                 }
             }
             else {
                 if (staging_location_.y > 80) {
-                    tankLocation = Point2D(staging_location_.x + 30, staging_location_.y - 5);
-                    marineLocation = Point2D(staging_location_.x + 30, staging_location_.y - 5);
+                    tankLocation = Point2D(staging_location_.x + 35, staging_location_.y - 10);
+                    marineLocation = Point2D(staging_location_.x + 35, staging_location_.y - 10);
                 }
                 else {
-                    tankLocation = Point2D(staging_location_.x + 5, staging_location_.y + 30);
-                    marineLocation = Point2D(staging_location_.x + 5, staging_location_.y + 30);
+                    tankLocation = Point2D(staging_location_.x + 10, staging_location_.y + 35);
+                    marineLocation = Point2D(staging_location_.x + 10, staging_location_.y + 35);
                 }
             }
             for (const auto& unit : army) {
