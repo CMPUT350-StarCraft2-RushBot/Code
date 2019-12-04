@@ -113,10 +113,11 @@ bool TryBuildSupplyDepot()  {
 bool TryBuildRefinery() {
     const ObservationInterface* observation = Observation();
     Units bases = observation->GetUnits(Unit::Alliance::Self, IsTownHall());
+    // Check for the refinery count
     if (CountUnitType(UNIT_TYPEID::TERRAN_REFINERY) >= observation->GetUnits(Unit::Alliance::Self, IsTownHall()).size() * 2) {
         return false;
     }
-
+    // Find one free SCV
     for (const auto& base : bases) {
         if (base->assigned_harvesters >= base->ideal_harvesters) {
             if (base->build_progress == 1) {
@@ -133,6 +134,7 @@ bool TryBuildRefinery() {
 
 
 const Unit* FindNearestMineralPatch(const Point2D& start) {
+    // This function will find the nearest mineral
     Units units = Observation()->GetUnits(Unit::Alliance::Neutral);
     float distance = std::numeric_limits<float>::max();
     const Unit* target = nullptr;
@@ -150,6 +152,7 @@ const Unit* FindNearestMineralPatch(const Point2D& start) {
 
 
 bool TryBuildGas(AbilityID build_ability, UnitTypeID worker_type, Point2D base_location) {
+    // This function will find the build gas
     const ObservationInterface* observation = Observation();
     Units geysers = observation->GetUnits(Unit::Alliance::Neutral, IsVespeneGeyser());
 
@@ -185,11 +188,7 @@ bool TryBuildBarracks() {
     // One build 1 barracks.
     if (CountUnitType(UNIT_TYPEID::TERRAN_BARRACKS) > 3)
         return false;
-
-    //float rx = GetRandomScalar();
-    //float ry = GetRandomScalar();
     
-    //return TryBuildStructure(ABILITY_ID::BUILD_BARRACKS, UNIT_TYPEID::TERRAN_SCV, Point2D(staging_location_.x+ rx * 5, staging_location_.y + ry * 5));
     Point2D defaultLocation;
     int barrackCount = CountUnitType(UNIT_TYPEID::TERRAN_BARRACKS);
 
@@ -260,6 +259,7 @@ bool TryBuildStructure(AbilityID ability_type_for_structure, UnitTypeID unit_typ
 
 
 bool TryBuildStructureRandom(AbilityID ability_type_for_structure, UnitTypeID unit_type) {
+    // This function will build structure at a random location give the specific unit
     float rx = GetRandomScalar();
     float ry = GetRandomScalar();
     Point2D build_location = Point2D(staging_location_.x + rx * 15, staging_location_.y + ry * 15);
@@ -283,6 +283,7 @@ bool TryBuildStructureRandom(AbilityID ability_type_for_structure, UnitTypeID un
 
 
 void ManageWorkers(UNIT_TYPEID worker_type, AbilityID worker_gather_command, UNIT_TYPEID vespene_building_type) {
+    // This function will manage the worker
     const ObservationInterface* observation = Observation();
     Units bases = observation->GetUnits(Unit::Alliance::Self, IsTownHall());
     Units geysers = observation->GetUnits(Unit::Alliance::Self, IsUnit(vespene_building_type));
@@ -348,6 +349,7 @@ void ManageWorkers(UNIT_TYPEID worker_type, AbilityID worker_gather_command, UNI
 
 
 void MineIdleWorkers(const Unit* worker, AbilityID worker_gather_command, UnitTypeID vespene_building_type) {
+    // This function can assist managing our SCV
     const ObservationInterface* observation = Observation();
     Units bases = observation->GetUnits(Unit::Alliance::Self, IsTownHall());
     Units geysers = observation->GetUnits(Unit::Alliance::Self, IsUnit(vespene_building_type));
@@ -358,6 +360,7 @@ void MineIdleWorkers(const Unit* worker, AbilityID worker_gather_command, UnitTy
         return;
     }
 
+    // Check for ideal SCV
     for (const auto& geyser : geysers) {
         if (geyser->assigned_harvesters < geyser->ideal_harvesters) {
             Actions()->UnitCommand(worker, worker_gather_command, geyser);
@@ -388,24 +391,17 @@ void MineIdleWorkers(const Unit* worker, AbilityID worker_gather_command, UnitTy
 }
 
 
-void AttackWithUnitType(UnitTypeID unit_type, const ObservationInterface* observation) {
-    Units units = observation->GetUnits(Unit::Alliance::Self, IsUnit(unit_type));
-    for (const auto& unit : units) {
-        AttackWithUnit(unit, observation);
-    }
-}
-
-
 void AttackWithUnit(const Unit* unit, const ObservationInterface* observation) {
     //If unit isn't doing anything make it attack.
     Units enemy_units = observation->GetUnits(Unit::Alliance::Enemy);
     if (enemy_units.empty()) {
-        //const GameInfo& game_info = Observation()->GetGameInfo();
+        // Attack based on the opponent's location
         Actions()->UnitCommand(unit, ABILITY_ID::ATTACK_ATTACK, game_info_.enemy_start_locations.front());
         return;
     }
 
     if (unit->orders.empty()) {
+        // If the unit has no order now, make it attack
         Actions()->UnitCommand(unit, ABILITY_ID::ATTACK, enemy_units.front()->pos);
         return;
     }
@@ -417,12 +413,12 @@ void AttackWithUnit(const Unit* unit, const ObservationInterface* observation) {
 }
 
 
-bool TryBuildFactory()
-{
-    if (CountUnitType(UNIT_TYPEID::TERRAN_FACTORY) > 1)
-    {
+bool TryBuildFactory() {
+    // Check for exsisting factory
+    if (CountUnitType(UNIT_TYPEID::TERRAN_FACTORY) > 1) {
         return false;
     }
+    // Build the factory based on base's location
     const ObservationInterface* observation = Observation();
     if (Observation()->GetMinerals() > 150 && Observation()->GetVespene() > 100) {
 
@@ -464,13 +460,11 @@ bool TryBuildFactory()
 
     }
     return false;
-
- 
 }
 
 
-bool TryBuildFactoryLab()
-{
+bool TryBuildFactoryLab() {
+    // Get all factories first
     const ObservationInterface* observation = Observation();
     Units factorys = observation->GetUnits(Unit::Self, IsUnits(factory_types));
     Units factorys_tech = observation->GetUnits(Unit::Self, IsUnit(UNIT_TYPEID::TERRAN_FACTORYTECHLAB));
@@ -478,6 +472,7 @@ bool TryBuildFactoryLab()
         if (!factory->orders.empty()) {
             continue;
         }
+        // Check for factories' add on tag
         if (observation->GetUnit(factory->add_on_tag) == nullptr) {
             return TryBuildAddOn(ABILITY_ID::BUILD_TECHLAB_FACTORY, factory->tag);
         }
@@ -487,6 +482,7 @@ bool TryBuildFactoryLab()
 
 
 bool TryBuildAddOn(AbilityID ability_type_for_structure, Tag base_structure) {
+    // This function will help to build on add on
     float rx = GetRandomScalar();
     float ry = GetRandomScalar();
     const Unit* unit = Observation()->GetUnit(base_structure);
@@ -520,7 +516,6 @@ bool TryBuildAddOn(AbilityID ability_type_for_structure, Tag base_structure) {
         return true;
     }
     return false;
-    
 }
 
 
@@ -541,17 +536,18 @@ bool FindEnemyStructure(const ObservationInterface* observation, const Unit*& en
             return true;
         }
     }
-
     return false;
 }
 
 void ManageArmy() {
+    // This function will manage our army
     const ObservationInterface* observation = Observation();
     Units enemy_units = observation->GetUnits(Unit::Alliance::Enemy);
     Units army = observation->GetUnits(Unit::Alliance::Self, IsArmy(observation));
     size_t marine_count = CountUnitType(UNIT_TYPEID::TERRAN_MARINE);
     size_t tank_count = CountUnitType(UNIT_TYPEID::TERRAN_SIEGETANK) + CountUnitType(UNIT_TYPEID::TERRAN_SIEGETANKSIEGED);
     
+    // Calculate the gathering location for marine and tank
     Point2D tankLocation = Point2D(staging_location_.x - 23, staging_location_.y + 13);
     Point2D marineLocation = Point2D(staging_location_.x - 23, staging_location_.y + 13);
     if (staging_location_.x > 80) {
@@ -575,11 +571,12 @@ void ManageArmy() {
         }
     }
 
-
+    // If the amount is reached, then attack
     if ( tank_count > 3 || marine_count > 20) {
         for (const auto& unit : army) {
             switch (unit->unit_type.ToType()) {
                 case UNIT_TYPEID::TERRAN_SIEGETANK: {
+                    // If enemy found, attack enemy
                     if (!enemy_units.empty()) {
                         float distance = std::numeric_limits<float>::max();
                         for (const auto& u : enemy_units) {
@@ -596,12 +593,14 @@ void ManageArmy() {
                             AttackWithUnit(unit, observation);
                         }
                     }
+                    // Attack the enemy's base
                     else {
                         AttackWithUnit(unit, observation);
                     }
                     break;
                 }
                 case UNIT_TYPEID::TERRAN_SIEGETANKSIEGED: {
+                    // If enemy found, attack enemy
                     if (!enemy_units.empty()) {
                         float distance = std::numeric_limits<float>::max();
                         for (const auto& u : enemy_units) {
@@ -624,18 +623,13 @@ void ManageArmy() {
                         break;
                     }
                     else {
+                        // Attack the enemy's base
                         Actions()->UnitCommand(unit, ABILITY_ID::MORPH_UNSIEGE);
                         AttackWithUnit(unit, observation);
                     }
                 }
-                default: {
-                    break;
-                }
-            }
-        }
-        for (const auto& unit : army) {
-            switch (unit->unit_type.ToType()) {
                 case UNIT_TYPEID::TERRAN_MARINE: {
+                    // Attack no matter what
                     AttackWithUnit(unit, observation);
                     break;
                 }
@@ -646,8 +640,10 @@ void ManageArmy() {
         }
     }
     else {
+        // Scouting with marine
         if (CountUnitType(UNIT_TYPEID::TERRAN_FACTORYTECHLAB) <= 1) {
             if (loccount < 3) {
+                // Send out 3 marines for potential locations
                 for (const auto& unit : army) {
                     UnitTypeID unit_type(unit->unit_type);
                     if (unit_type != UNIT_TYPEID::TERRAN_MARINE)
@@ -658,6 +654,7 @@ void ManageArmy() {
                     loccount++;
                 }
             }
+            // If the marine come back, remove corresponding location
             for (const auto& unit : army) {
                 switch (unit->unit_type.ToType()) {
                     case UNIT_TYPEID::TERRAN_MARINE: {
@@ -678,6 +675,7 @@ void ManageArmy() {
                         }
                         break;
                     }
+                    // If the tank is built, send to gathering location
                     case UNIT_TYPEID::TERRAN_SIEGETANK: {
                         float dist = Distance2D(unit->pos, tankLocation);
                         if (dist < 2) {
@@ -697,6 +695,7 @@ void ManageArmy() {
             }
         }
         else if (CountUnitType(UNIT_TYPEID::TERRAN_SIEGETANK) <= 3) {
+            // Gather the army is the number is not reached
             for (const auto& unit : army) {
                 switch (unit->unit_type.ToType()) {
                     case UNIT_TYPEID::TERRAN_SIEGETANK: {
